@@ -1,9 +1,8 @@
-ERROR_EMAIL = 'youremail@bodacious.edu'
+ERROR_EMAIL = 'ratanjagan@gmail.com'
 // this defines 6 conditions (a 2x3 design)
 // make sure to update num_conds in config.txt to reflect any changes you make here
 const PARAMS = conditionParameters(CONDITION, {
-  showSecretStage: [false, true],
-  anotherParameter: [1, 2, 3],
+  run: [true, false]
 })
 
 updateExisting(PARAMS, urlParams) // allow hardcoding e.g. &showSecretStage=true
@@ -11,40 +10,90 @@ psiturk.recordUnstructuredData('params', PARAMS);
 
 
 async function runExperiment() {
-  // stimuli = await $.getJSON(`static/json/${CONDITION}.json`)
-
+  console.log(CONDITION, PARAMS)
+  annotation_tasks = await $.getJSON(`static/02-annotation_tasks.json`)
+  annotation_task_index = Math.floor(Math.random() * 5)
+  annotation_task = annotation_tasks[annotation_task_index]
   // logEvent is how you save data to the database
-  logEvent('experiment.initialize', {CONDITION, PARAMS})
-  enforceScreenSize(1200, 750)
+  logEvent('experiment.initialize', annotation_task)
+  // enforceScreenSize(1200, 750)
 
   async function instructions() {
     await new ExampleInstructions().run(DISPLAY)
   }
 
+  function result_prompt(need, query, result) {
+    return `
+      <font color="red">_„Informationsbedürfnis“_ </font>: ${need}
+      <br/>
+      <font color="green">_„Abfrage“_</font>: ${query}
+      <br/>
+      <font color="blue">„Ergebnis“</font>: <a href="${result}" target="_blank">${result}</a>
+      <br/>
+      
+      -----
+
+      **Relevanz**:
+    `
+  }
+
+  function relevance_radio_buttons() { return new RadioButtons({
+    choices: [
+    '1 - Ich weiß nicht genug, um dieses Urteil zu fällen',
+    '2 - Nicht genug Zeit, um eine Entscheidung zu treffen',
+    '3 - Spam',
+    '4 - Nicht so relevant für den Lehrer',
+    '5 - Könnte für den Lehrer relevant sein',
+    '6 - Genau das, was der Lehrer braucht' ],
+    name: 'relevance'
+  }) }
+
+
+  function summary_prompt(need, query, summary) {
+    return `
+      <font color="red">_„Informationsbedürfnis“_ </font>: ${need}
+      <br/>
+      <font color="green">_„Abfrage“_</font>: ${query}
+      <br/>
+      <font color="GoldenRod">_„Zusammenfassung“_</font>: 
+      <br/>
+
+${summary}      
+      -----
+
+      **Relevanz**:
+    `
+  }
+
   async function main() {
     DISPLAY.empty()
-    let trials = [1,2,3]
     let top = new TopBar({
-      nTrial: trials.length,
+      nTrial: annotation_task.length,
       height: 70,
       width: 900,
       help: `
-        Write some help text here.
+        Bewerten Sie die **Relevanz** dieses <font color="GoldenRod">_„Zusammenfassung“_</font>/<font color="blue">„Ergebnis“</font> 
+        to this <font color="red">_„Informationsbedürfnis“_ </font> and <font color="green">_„Abfrage“_</font>.
       `
     }).prependTo(DISPLAY)
 
     let workspace = $('<div>').appendTo(DISPLAY)
 
-    for (let trial of trials) {
-      // you will probably want to define a more interesting task here
-      // or in a separate file (make sure to include it in exp.html)
+    for (let task of annotation_task) {
+      console.log(task)
       workspace.empty()
-      await button(workspace, 'click me')
-      .css({marginTop: 150, marginLeft: -400 + 200 * trial})
-      .promise()
+      if (task['type'] == 'summary') {
+        const md = markdown(summary_prompt(task.need, task.query, task.content))
+        workspace.html(md)
+        let radio = relevance_radio_buttons().appendTo(workspace)
+        await radio.promise()
+      } else {
+        workspace.html(markdown(result_prompt(task.need, task.query, task.url)))
+        let radio = relevance_radio_buttons().appendTo(workspace)
+        await radio.promise()
+      }
       top.incrementCounter()
       saveData()
-
     }
   }
 
@@ -52,24 +101,28 @@ async function runExperiment() {
     DISPLAY.empty()
     let div = $('<div>').appendTo(DISPLAY).addClass('text')
     $('<p>').appendTo(div).html(markdown(`
-      # You're done!
+      # Fertig!
 
-      Thanks for participating! We have a few quick questions before you go.
+      Vielen Dank für Ihre Teilnahme! Bevor Sie gehen, haben wir noch ein paar kurze Fragen.
     `))
 
     let difficulty = radio_buttons(div, `
-      How difficult was the experiment?
-    `, ['too easy', 'just right', 'too hard'])
+      Wie schwierig war das Experiment?
+    `, ['zu einfach', 'nicht schwer', 'nicht schwer'])
+
+    let understandability = radio_buttons(div, `
+      Wussten Sie genug über das Thema, um vernünftige Entscheidungen zu treffen?
+    `, ['ja', 'nein'])
 
     let feedback = text_box(div, `
-      Do you have any other feedback? (optional)
+      Haben Sie sonstiges Feedback? (optional)
     `)
 
-    makeGlobal({difficulty})
+    makeGlobal({difficulty, understandability})
 
     await button(div, 'submit').clicked
     // this information is already in the log, but let's put it in one place
-    logEvent('debrief.submitted', getInputValues({difficulty, feedback}))
+    logEvent('debrief.submitted', getInputValues({difficulty, understandability, feedback}))
   }
 
   // using runTimeline is optional, but it allows you to jump to different blocks

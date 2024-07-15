@@ -115,6 +115,7 @@ class RadioButtons extends Input {
        .text(choice)
        .css({marginLeft: 5, marginRight: 10})
        .appendTo(btnDiv)
+       $('<br>').appendTo(btnDiv)
     }
   }
 

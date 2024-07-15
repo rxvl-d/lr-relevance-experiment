@@ -1,7 +1,7 @@
 const DEFAULT_INSTRUCT_HELP= `
-  Use the << and >> buttons to flip through the sections. You have
-  to follow all the instructions on a page before you can advance to the next one.
-  If you get stuck, try clicking << and then >> to start the section over.
+Verwenden Sie die Schaltflächen << und >>, um durch die Abschnitte zu blättern. Sie müssen
+alle Anweisungen auf einer Seite befolgen, bevor Sie zur nächsten Seite gelangen können.
+Wenn Sie nicht weiterkommen, klicken Sie auf << und dann auf >>, um den Abschnitt erneut zu beginnen.
 `
 
 class Instructions {
@@ -167,7 +167,6 @@ class Instructions {
 class ExampleInstructions extends Instructions {
   constructor(options={}) {
     super(options)
-
     if (!PARAMS.showSecretStage) {
       this.stages = this.stages.filter(stage => {
         return stage.name != 'stage_conditional'
@@ -181,84 +180,159 @@ class ExampleInstructions extends Instructions {
 
   async stage_welcome() {
     this.setPrompt(`
-      Thanks for participating! We'll start with some quick instructions.
+      Vielen Dank für Ihre Teilnahme! Wir beginnen mit einigen kurzen Anweisungen.
 
-      _use the arrows above to navigate_
+      _Verwenden Sie die Pfeile oben zum Navigieren_
     `)
   }
 
-  async stage_conditional() {
-    this.setPrompt(
-      "You will only see this if `PARAMS.showSecretStage` is true"
-    )
+  result_prompt(need, query, result) {
+    return `
+      <font color="red">_„Informationsbedürfnis“_ </font>: ${need}
+
+      <font color="green">_„Abfrage“_</font>: ${query}
+
+      <font color="blue">„Ergebnis“</font>: <a href="${result}" target="_blank">${result}</a>
+      
+      -----
+
+      **Relevanz**:
+    `
   }
 
-  async stage2() {
+  relevance_radio_buttons() { return new RadioButtons({
+    choices: [
+    '1 - Ich weiß nicht genug, um dieses Urteil zu fällen',
+    '2 - Nicht genug Zeit, um eine Entscheidung zu treffen',
+    '3 - Spam',
+    '4 - Nicht so relevant für den Lehrer',
+    '5 - Könnte für den Lehrer relevant sein',
+    '6 - Genau das, was der Lehrer braucht' ],
+    name: 'relevance'
+  }) }
+
+
+  summary_prompt(need, query, summary) {
+    return `
+      <font color="red">_„Informationsbedürfnis“_ </font>: ${need}
+
+      <font color="green">_„Abfrage“_</font>: ${query}
+
+      <font color="GoldenRod">_„Zusammenfassung“_</font>: 
+
+${summary}      
+      -----
+
+      **Relevanz**:
+    `
+  }
+
+  async stage_instructions() {
     this.setPrompt(`
-      In this experiment, you will do many things!
+In dieser Studie werden Sie gebeten, die Relevanz einiger _„Inhalte“_ für eine Suche zu bewerten, die von einem Physik- oder Chemielehrer der 7. bis 10. Klasse durchgeführt wird.
+
+Wenn ein Lehrer eine Suche durchführt, hat er ein <font color="red">_„Informationsbedürfnis“_</font>, 
+das in einer Aussage wie der folgenden ausgedrückt wird: 
+_„Finde eine umfassende Zusammenfassung der Newtonschen Gesetze und ihrer Anwendungen in der Dynamik.“_
+
+Dann versucht er, dieses <font color="red">_„Informationsbedürfnis“_</font> zu befriedigen, 
+indem er eine <font color="green">_„Abfrage“_</font> wie 
+_„Überblick Newtonsche Gesetze“_ an eine Suchmaschine sendet.
+
+Als Ergebnis gibt die Suchmaschine mehrere mögliche <font color="blue">„Ergebnisse“</font> 
+(z.B. https://naturwissenschaften.bildung-rp.de/...) 
+mit einer kleinen <font color="GoldenRod">_„Zusammenfassung“_</font> wie dieser:
+
+-----
+
+![Zusammenfassung Beispiel](static/search_summary_example.png)
+
+-----
+
+In dieser Studie werden wir Sie fragen, wie relevant sowohl eine <font color="GoldenRod">„Zusammenfassung“</font> als auch ein 
+<font color="blue">„Ergebnis“</font> für ein <font color="red">„Informationsbedürfnis“</font> und die damit verbundene 
+<font color="green">„Abfrage“</font> sind.
+
+Nachdem Sie versucht haben, Ihr Urteil zu fällen, müssen Sie eine der folgenden Optionen auswählen.:
+1 - Ich weiß nicht genug, um dieses Urteil zu fällen
+2 - Nicht genug Zeit, um eine Entscheidung zu treffen
+3 - Spam
+4 - Nicht so relevant für den Lehrer
+5 - Könnte für den Lehrer relevant sein
+6 - Genau das, was der Lehrer braucht
+
+<div class="alert alert-danger">
+<b>Achtung!</b><br>
+Verbringen Sie nicht mehr als eine Minute mit jeder Aufgabe.
+Wenn Sie innerhalb einer Minute keine Entscheidung treffen können, wählen Sie Option 2.
+</div>
+
+Jetzt werden wir einige praktische Bewertungen durchführen und dann mit der eigentlichen Studie beginnen.
     `)
-    await this.button()
+  }
 
-    this.setPrompt(`
-      For example, you will press buttons.
-    `)
-    await this.button('button')
-
-    // this.prompt is a jquery object
-    this.prompt.empty()
-
-    this.setPrompt(`
-      You might have to answer questions too. Is that okay?
-    `)
-
-    let radio = new RadioButtons({
-      choices: ['yes', 'no'],
-      name: 'answer okay'
-    }).appendTo(this.prompt)
-
-    // we wait for user input before continuing
-    // promise() always returns a Promise (something you can await)
+  async stage_result_relevance_example() {
+    this.setPrompt(this.result_prompt(
+      'Finde eine zusammenfassende Darstellung der wichtigsten Strukturen und Eigenschaften organischer Verbindungen wie Alkane, Alkanole und Aromaten.',
+      'Überblick Strukturen Eigenschaften organische Verbindungen',
+      'https://www.raabits.de/unterrichtsmaterial/chemie/organische-chemie'
+    ))
+    let radio = this.relevance_radio_buttons().appendTo(this.prompt)
     let click = await radio.promise()
-    // buttons() is a jquery selector so you can use any jquery magic you want here
-    radio.buttons().prop('disabled', true)
-    // in general, all interactions with the classes in inputs.js
-    // will be automatically logged (saved to database)
-
-    if (click == 'yes') {
-      this.appendPrompt("Glad to hear it!")
+    let choice = parseInt(click.split(' - ')[0])
+    if (choice == 5) {
+      this.runPrev() // TODO: end the instructions early
     } else {
-      this.appendPrompt("Well at least you're willing to do it anyway.")
+      this.runNext()
     }
   }
 
-  async stage_1_badly_named() {
-    this.setPrompt('Sometimes there will be fun alerts!')
-    await this.button('...')
-    await alert_success()  // wait for confirm
+  async stage_summary_relevance_example() {
+    this.setPrompt(this.summary_prompt(
+      'Finde eine zusammenfassende Darstellung der wichtigsten Strukturen und Eigenschaften organischer Verbindungen wie Alkane, Alkanole und Aromaten.',
+      'Überblick Strukturen Eigenschaften organische Verbindungen',
+      `-----
+      
+##### https://www.raabits.de › unterrichtsmaterial › organische-... 
+
+#### Organische Chemie
+
+**Organische** Chemie und **Organische** Stoffe ▻ Stoffgruppen und Reaktionen: ✓ **Organische** Reaktionen ✓ Funktionelle Gruppen ✓ Nomenklatur ✓ Alkane und Ester.
+
+` 
+    ))
+    let radio = this.relevance_radio_buttons().appendTo(this.prompt)
+    let click = await radio.promise()
+    let choice = parseInt(click.split(' - ')[0])
+    if (choice == 5) {
+      this.runPrev() // TODO: end the instructions early
+    } else {
+      this.runNext()
+    }
   }
 
   async stage_final() {
     // I suggest keeping something like this here to warn participants to not refresh
 
     this.setPrompt(`
-      In the rest of the experiment, yada yada
+      Im weiteren Verlauf des Experiments erhalten Sie eine Mischung dieser beiden Abfragetypen in zufälliger Reihenfolge.
 
-      <br><br>
-      <div class="alert alert-danger">
-        <b>Warning!</b><br>
-        Once you complete the instructions, <strong>you cannot refresh the page</strong>.
-        If you do, you will get an error message and you won't be able to complete the
-        study.
-      </div>
+<br><br>
+<div class="alert alert-danger">
+<b>Achtung!</b><br>
+Nachdem Sie die Anweisungen ausgeführt haben, <strong>können Sie die Seite nicht aktualisieren</strong>.
+Wenn Sie dies tun, erhalten Sie eine Fehlermeldung und können die
+Studie nicht abschließen.
+</div>
     `)
-    let question = 'Are you going to refresh the page after completing the instructions?'
-    let radio = radio_buttons(this.prompt, question, ['yes', 'no'])
+    let question = 'Möchten Sie die Seite aktualisieren, nachdem Sie die Anweisungen abgeschlossen haben?'
+    let radio = radio_buttons(this.prompt, question, ['Ja', 'Nein'])
     let post = $('<div>').appendTo(this.prompt)
     let no = makePromise()
     let done = false
     radio.click((val) => {
       if (val == 'yes') {
-        post.html("Haha... But seriously.")
+        post.html("Sie müssen akzeptieren.")
       } else {
         no.resolve()
       }
@@ -266,8 +340,7 @@ class ExampleInstructions extends Instructions {
     await no
     radio.buttons().off()
     radio.buttons().prop('disabled', true)
-    post.html('Good. No refreshing!')
-    await this.button('finish instructions')
+    await this.button('Weiter')
     this.runNext() // don't make them click the arrow
   }
 }

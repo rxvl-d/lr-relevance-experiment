@@ -1,7 +1,7 @@
 [Task Parameters]
 experiment_code_version = v1.0
 # this number determines how many values the CONDITION variable can take
-num_conds = 6
+num_conds = 2
 # don't change this
 num_counters = 1
 
@@ -10,16 +10,22 @@ database_url = sqlite:///participants.db
 table_name = participants
 
 [Prolific]
-name = Public Study Name Shown to Participants
-project_name = prolific_project_name
-reward = 225
-total_available_places = 30
-estimated_completion_time = 15
+name = Beurteilen Sie die Relevanz von Lernressourcen und deren in Suchmaschinen bereitgestellten Zusammenfassungen.
+project_name = german-lr-rel
+reward = 1.5
+total_available_places = 10
+estimated_completion_time = 10
 description =
-    Describe your study here
-
-    You can use *Markdown* formatting.
-
+    In dieser Studie werden Sie gebeten, die Relevanz einer Website oder einer Zusammenfassung dieser Website zu bewerten (wie Sie sie vielleicht bei Google gesehen haben, wenn Sie nach etwas gegoogelt haben). 
+    Besonders interessiert uns die Relevanz von Lernressourcen für Lehrer. 
+    Sie werden gebeten, die Relevanz zu bewerten, als wären Sie ein Lehrer an einem deutschen Gymnasium, der die 7. bis 10. Klasse unterrichtet. 
+    Ihnen wird ein „Informationsbedarf“ mitgeteilt, etwa „Sie möchten Videos finden, die Schülern der 8. Klasse das Atommodell erklären, um sie mit ihnen im Unterricht anzuschauen“. 
+    Und dann werden Ihnen eine Reihe von Websites mit Zusammenfassungen von Websites angezeigt. 
+    Und Sie werden gebeten, ihnen eine Bewertung von 1 bis 4 zu geben. 
+    1 – Spam. 
+    2 – Nicht sehr relevant. 
+    3 – Etwas relevant. 
+    4 – Genau das, wonach gesucht wird.
 [Server Parameters]
 host = 0.0.0.0
 port = 22363
@@ -30,7 +36,7 @@ debug = true
 login_username = user
 login_pw = pw
 threads = 1
-secret_key = 'this is my secret key which is hard to guess, i should change this'
+secret_key = 'stop and turk the white flibbetygibbet'
 
 # everything below isn't necessary if you're not using mTurk
 
