@@ -1,5 +1,5 @@
 ERROR_EMAIL = 'ratanjagan@gmail.com'
-const PROLIFIC_CODE = "6A5FDC7A"
+const PROLIFIC_CODE = "CQXGWHQR"
 // this defines 6 conditions (a 2x3 design)
 // make sure to update num_conds in config.txt to reflect any changes you make here
 const PARAMS = conditionParameters(CONDITION, {
